@@ -2,15 +2,14 @@ import logging
 import os
 from typing import Optional
 
-import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 from botocore.exceptions import ClientError
 
-from app.models import NewPost, Post, PostList, UpdatedPost
-import app.store as store
+from models import NewPost, Post, PostList, UpdatedPost
+import store as store
 
 URL_BASE = '/' + os.environ['BASE_PATH']
 
@@ -65,6 +64,7 @@ def delete_post(slug: str):
 
 if __name__ == '__main__':
     import argparse
+    import uvicorn
     parser = argparse.ArgumentParser()
     parser.add_argument('--host')
     parser.add_argument('--port', type=int)

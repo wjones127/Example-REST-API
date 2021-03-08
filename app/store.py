@@ -6,7 +6,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 import boto3
 
-from app.models import NewPost, Post, PostList, PostListItem, UpdatedPost
+from models import NewPost, Post, PostList, PostListItem, UpdatedPost
 
 dynamodb = boto3.client('dynamodb')
 
