@@ -5,6 +5,7 @@ import base64
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 import boto3
+from botocore.exceptions import ClientError
 
 from models import NewPost, Post, PostList, PostListItem, UpdatedPost
 from models import Comment, CommentList, NewComment, UpdateComment
@@ -12,12 +13,19 @@ from models import UpdateUser, NewUser, User, UserList
 
 dynamodb = boto3.client('dynamodb')
 
+class NotFoundError(ValueError):
+    pass
+
+class ResourceAlreadyExistsError(ValueError):
+    pass
 
 def get_post(slug: str) -> Post:
     result = dynamodb.get_item(
         TableName=os.environ['BLOG_TABLE'],
         Key={'PK': {'S': f'P#{slug}'}, 'SK': {'S': f'P#{slug}'}},
     )
+    if 'Item' not in result:
+        raise NotFoundError
     return Post.from_dynamo_item(result['Item'])
 
 
@@ -35,11 +43,18 @@ def create_post(post: NewPost) -> Post:
         'UpdatedAt': {'S': created_at},
         'AuthorEmail_EntityType': {'S': f'{post.author_email}#Post'},
     }
-    dynamodb.put_item(
-        TableName=os.environ['BLOG_TABLE'],
-        Item=item,
-        ConditionExpression='attribute_not_exists(PK)', # Prevent overwriting
-    )
+    try:
+        dynamodb.put_item(
+            TableName=os.environ['BLOG_TABLE'],
+            Item=item,
+            ConditionExpression='attribute_not_exists(PK)', # Prevent overwriting
+        )
+    except ClientError as e:  
+        if e.response['Error']['Code'] == 'ConditionalCheckFailedException': 
+            raise ResourceAlreadyExistsError
+        else:
+            raise
+
     return Post.from_dynamo_item(item)
 
 
@@ -101,7 +116,7 @@ def get_page_for_author_entity(author: str, entityType: str, page_token: Optiona
         'IndexName': os.environ['BLOG_TABLE_AUTHOR_INDEX'],
         'KeyConditionExpression': 'AuthorEmail_EntityType = :key',
         'ExpressionAttributeValues': {
-            ':entity': {'S': f'{author}#{entityType}'}
+            ':key': {'S': f'{author}#{entityType}'}
         }
     }
     index_keys = ['PK', 'SK', 'AuthorEmail_EntityType', 'CreatedAt']
@@ -183,11 +198,18 @@ def create_comment(post_slug: str, comment: NewComment) -> Comment:
         'UpdatedAt': {'S': created_at},
         'AuthorEmail_EntityType': {'S': f'{comment.author_email}#Comment'}
     }
-    dynamodb.put_item(
-        TableName=os.environ['BLOG_TABLE'],
-        Item=item,
-        ConditionExpression='attribute_not_exists(PK)', # Prevent overwriting
-    )
+    try:
+        dynamodb.put_item(
+            TableName=os.environ['BLOG_TABLE'],
+            Item=item,
+            ConditionExpression='attribute_not_exists(PK)', # Prevent overwriting
+        )
+    except ClientError as e:  
+        if e.response['Error']['Code'] == 'ConditionalCheckFailedException': 
+            raise ResourceAlreadyExistsError
+        else:
+            raise
+
     return Comment.from_dynamo_item(item)
 
 def update_comment(post_slug: str, author: str, date: datetime, comment: UpdateComment) -> Comment:
@@ -241,13 +263,16 @@ def list_comments(pageToken: Optional[str]=None, limit: int=20) -> CommentList:
         nextPageToken=nextToken.encode() if nextToken else None,
         prevPageToken=prevToken.encode() if prevToken else None,
     )
-    
+
 
 def get_user(email: str) -> User:
     result = dynamodb.get_item(
         TableName=os.environ['BLOG_TABLE'],
         Key={'PK': {'S': f'U#{email}'}, 'SK': {'S': f'U#{email}'}},
     )
+    if 'Item' not in result:
+        raise NotFoundError
+
     return User.from_dynamo_item(result['Item'])
 
 def create_user(user: NewUser) -> User:
@@ -262,11 +287,18 @@ def create_user(user: NewUser) -> User:
         'CreatedAt': {'S': created_at},
         'UpdatedAt': {'S': created_at},
     }
-    dynamodb.put_item(
-        TableName=os.environ['BLOG_TABLE'],
-        Item=item,
-        ConditionExpression='attribute_not_exists(PK)', # Prevent overwriting
-    )
+    try:
+        dynamodb.put_item(
+            TableName=os.environ['BLOG_TABLE'],
+            Item=item,
+            ConditionExpression='attribute_not_exists(PK)', # Prevent overwriting
+        )
+    except ClientError as e:  
+        if e.response['Error']['Code'] == 'ConditionalCheckFailedException': 
+            raise ResourceAlreadyExistsError
+        else:
+            raise
+
     return User.from_dynamo_item(item)
 
 def update_user(email: str, user: UpdateUser) -> User:
@@ -307,7 +339,7 @@ def list_posts_for_author(email: str, pageToken: Optional[str]=None, limit: int=
 
     items, nextToken, prevToken = get_page_for_author_entity(email, 'Post', page, limit=limit)
 
-    parsed_items = [Post.from_dynamo_item(item) for item in items]
+    parsed_items = [PostListItem.from_dynamo_item(item) for item in items]
     return PostList(
         posts=parsed_items,
         nextPageToken=nextToken.encode() if nextToken else None,

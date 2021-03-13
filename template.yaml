@@ -29,7 +29,7 @@ Resources:
           BASE_PATH: blog
           BLOG_TABLE: !Ref BlogTable
           BLOG_TABLE_ENTITY_INDEX: EntityType-CreatedAt-Index
-          BLOG_TABLE_AUTHOR_INDEX: AuthorEmail_EntityType-CreatedAt-Index
+          BLOG_TABLE_AUTHOR_INDEX: AuthorEmail_EntityType-CreatedAt-IndexV2
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref BlogTable
@@ -74,7 +74,7 @@ Resources:
               - FirstName
               - LastName
               - Role
-        - IndexName: AuthorEmail_EntityType-CreatedAt-Index
+        - IndexName: AuthorEmail_EntityType-CreatedAt-IndexV2
           KeySchema:
             - AttributeName: AuthorEmail_EntityType
               KeyType: HASH
@@ -89,6 +89,7 @@ Resources:
               - Title
               - Comment
               - UpdatedAt
+              - AuthorEmail
 
 
 Outputs:

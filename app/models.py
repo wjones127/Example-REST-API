@@ -93,7 +93,7 @@ class User(NewUser):
             first_name=item['FirstName']['S'],
             last_name=item['LastName']['S'],
             role=item['Role']['S'],
-            email=item['PK']['S'].split('#')[2:],
+            email=item['PK']['S'][2:],
             created_at=isoparse(item['CreatedAt']['S']),
             updated_at=isoparse(item['UpdatedAt']['S']),
         )

@@ -6,7 +6,6 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
-from botocore.exceptions import ClientError
 from dateutil.parser import isoparse
 
 from models import (Comment, NewComment, NewPost, Post, PostList, UpdateComment,
@@ -60,12 +59,21 @@ def list_posts(pageToken: Optional[str]=None, limit: int=20):
 
 @app.post(URL_BASE + '/posts', response_model=Post, tags=['posts'])
 def create_post(post: NewPost):
-    '''Creates a new post. slug must be unique.'''
+    '''Creates a new post. slug must be unique.
+    
+    The author specified in author_email must exist and must have the role 'Author'.'''
+    try:
+        author = store.get_user(post.author_email)
+        assert author.role == 'Author'
+    except store.NotFoundError:
+        return JSONResponse(content={'error': 'User does not exist'}, status_code=400)
+    except AssertionError:
+        return JSONResponse(content={'error': 'User is not an author'}, status_code=400)
+
     try:
         return store.create_post(post)
-    except ClientError as e:  
-        if e.response['Error']['Code'] == 'ConditionalCheckFailedException': 
-            return JSONResponse(content={"error": "Post slug already exists"}, status_code=400)
+    except store.ResourceAlreadyExistsError:
+        return JSONResponse(content={"error": "Post slug already exists"}, status_code=400)
 
 @app.get(URL_BASE + '/posts/{slug}', response_model=Post, tags=['posts'])
 def get_post(slug: str):
@@ -73,6 +81,14 @@ def get_post(slug: str):
 
 @app.put(URL_BASE + '/posts/{slug}', response_model=Post, tags=['posts'])
 def update_post(slug: str, post: UpdatedPost):
+    try:
+        author = store.get_user(post.author_email)
+        assert author.role == 'Author'
+    except store.NotFoundError:
+        return JSONResponse(content={'error': 'User does not exist'}, status_code=400)
+    except AssertionError:
+        return JSONResponse(content={'error': 'User is not an author'}, status_code=400)
+    
     return store.update_post(slug, post)
 
 @app.delete(URL_BASE + '/posts/{slug}', status_code=204, tags=['posts'])
@@ -87,11 +103,14 @@ def list_comments(pageToken: Optional[str]=None, limit: int=20):
 @app.post(URL_BASE + '/posts/{slug}/comments/', response_model=Comment, tags=['comments'])
 def create_comment(slug: str, comment: NewComment):
     try:
+        store.get_user(comment.author_email)
+    except store.NotFoundError:
+        return JSONResponse(content={'error': 'User does not exist'}, status_code=400)
+
+    try:
         return store.create_comment(slug, comment)
-    except ClientError as e:  
-        if e.response['Error']['Code'] == 'ConditionalCheckFailedException': 
-            # In unlikely event that you try to submit comment with existing created_at
-            return JSONResponse(content={"error": "Too many comments at once"}, status_code=429)
+    except store.ResourceAlreadyExistsError:
+        return JSONResponse(content={"error": "Too many comments at once"}, status_code=429)
 
 @app.get(URL_BASE + '/posts/{slug}/comments/', response_model=CommentList, tags=['comments'])
 def list_comments_for_post(slug: str, pageToken: Optional[str]=None, limit: int=2):
@@ -111,18 +130,15 @@ def delete_comment(slug: str, author: str, date: str):
 def create_user(user: NewUser):
     try:
         return store.create_user(user)
-    except ClientError as e:  
-        if e.response['Error']['Code'] == 'ConditionalCheckFailedException': 
-            # In unlikely event that you try to submit comment with existing created_at
-            return JSONResponse(content={"error": "User already exists with that email"}, status_code=429)
+    except store.ResourceAlreadyExistsError:
+        return JSONResponse(content={"error": "User already exists with that email"}, status_code=400)
 
 @app.get(URL_BASE + '/users/{email}/', response_model=User, tags=['users'])
 def get_user(email: str):
     try:
         return store.get_user(email)
-    except ClientError as e:
-        if e.response['Error']['Code'] == 'NotFound':
-            return JSONResponse(content={"error": "User not found"}, status_code=404)
+    except store.NotFoundError:
+        return JSONResponse(content={"error": "User not found"}, status_code=404)
 
 @app.put(URL_BASE + '/users/{email}/', response_model=User, tags=['users'])
 def update_user(email: str, user: UpdateUser):
