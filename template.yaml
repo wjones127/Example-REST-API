@@ -27,8 +27,8 @@ Resources:
       Environment:
         Variables:
           BASE_PATH: blog
-          BLOG_TABLE: Blog
-          BLOG_TABLE_ENTITY_INDEX: EntityType-CreatedAt-index
+          BLOG_TABLE: !Ref BlogTable
+          BLOG_TABLE_ENTITY_INDEX: EntityType-CreatedAt-Index
           BLOG_TABLE_AUTHOR_INDEX: AuthorEmail_EntityType-CreatedAt-Index
       Policies:
         - DynamoDBCrudPolicy:
