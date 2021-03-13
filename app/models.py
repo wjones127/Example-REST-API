@@ -100,5 +100,5 @@ class User(NewUser):
 
 class UserList(pydantic.BaseModel):
     users: List[User]
-    nextpageToken: Optional[str]
+    nextPageToken: Optional[str]
     prevPageToken: Optional[str]
