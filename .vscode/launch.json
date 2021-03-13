@@ -1,0 +1,21 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch API",
+            "type": "python",
+            "request": "launch",
+            "program": "app/api.py",
+            "console": "integratedTerminal",
+            "env": {
+                "BASE_PATH": "blog",
+                "BLOG_TABLE": "BlogV2",
+                "BLOG_TABLE_ENTITY_INDEX": "EntityType-CreatedAt-Index",
+                "BLOG_TABLE_AUTHOR_INDEX": "AuthorEmail_EntityType-CreatedAt-IndexV2"
+            }
+        }
+    ]
+}
