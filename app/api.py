@@ -55,7 +55,10 @@ handler = Mangum(app)
 @app.get(URL_BASE + '/posts', response_model=PostList, tags=['posts'])
 def list_posts(pageToken: Optional[str]=None, limit: int=20):
     '''List posts in the blog, ordered by created date (descending)'''
-    return store.list_posts(pageToken, limit)
+    try:
+        return store.list_posts(pageToken, limit)
+    except store.InvalidPageTokenError:
+        return JSONResponse(content={'error': 'pageToken is invalid'}, status_code=400)
 
 @app.post(URL_BASE + '/posts', response_model=Post, tags=['posts'])
 def create_post(post: NewPost):
@@ -98,7 +101,10 @@ def delete_post(slug: str):
 
 @app.get(URL_BASE + '/comments/', response_model=CommentList, tags=['comments'])
 def list_comments(pageToken: Optional[str]=None, limit: int=20):
-    return store.list_comments(pageToken, limit)
+    try:
+        return store.list_comments(pageToken, limit)
+    except store.InvalidPageTokenError:
+        return JSONResponse(content={'error': 'pageToken is invalid'}, status_code=400)
 
 @app.post(URL_BASE + '/posts/{slug}/comments/', response_model=Comment, tags=['comments'])
 def create_comment(slug: str, comment: NewComment):
@@ -114,7 +120,10 @@ def create_comment(slug: str, comment: NewComment):
 
 @app.get(URL_BASE + '/posts/{slug}/comments/', response_model=CommentList, tags=['comments'])
 def list_comments_for_post(slug: str, pageToken: Optional[str]=None, limit: int=2):
-    return store.list_comments_for_post(slug, pageToken, limit)
+    try:
+        return store.list_comments_for_post(slug, pageToken, limit)
+    except store.InvalidPageTokenError:
+        return JSONResponse(content={'error': 'pageToken is invalid'}, status_code=400)
 
 @app.put(URL_BASE + '/posts/{slug}/comments/{author}/{date}', response_model=Comment, tags=['comments'])
 def update_comment(slug: str, author: str, date: str, comment: UpdateComment):
@@ -151,17 +160,26 @@ def delete_user(email: str):
 
 @app.get(URL_BASE + '/users/', response_model=UserList, tags=['users'])
 def list_users(pageToken: Optional[str]=None, limit: int=20):
-    return store.list_users(pageToken, limit)
+    try:
+        return store.list_users(pageToken, limit)
+    except store.InvalidPageTokenError:
+        return JSONResponse(content={'error': 'pageToken is invalid'}, status_code=400)
 
 @app.get(URL_BASE + '/users/{email}/posts', response_model=PostList, tags=['posts'])
 def list_posts_for_author(email: str, pageToken: Optional[str]=None, limit: int=20):
     '''List posts in the blog, ordered by created date (descending)'''
-    return store.list_posts_for_author(email, pageToken, limit)
+    try:
+        return store.list_posts_for_author(email, pageToken, limit)
+    except store.InvalidPageTokenError:
+        return JSONResponse(content={'error': 'pageToken is invalid'}, status_code=400)
 
 @app.get(URL_BASE + '/users/{email}/comments', response_model=PostList, tags=['comments'])
 def list_comments_for_author(email: str, pageToken: Optional[str]=None, limit: int=20):
     '''List posts in the blog, ordered by created date (descending)'''
-    return store.list_comments_for_author(email, pageToken, limit)
+    try:
+        return store.list_comments_for_author(email, pageToken, limit)
+    except store.InvalidPageTokenError:
+        return JSONResponse(content={'error': 'pageToken is invalid'}, status_code=400)
 
 
 if __name__ == '__main__':

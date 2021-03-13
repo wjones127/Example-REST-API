@@ -19,6 +19,9 @@ class NotFoundError(ValueError):
 class ResourceAlreadyExistsError(ValueError):
     pass
 
+class InvalidPageTokenError(ValueError):
+    pass
+
 def get_post(slug: str) -> Post:
     result = dynamodb.get_item(
         TableName=os.environ['BLOG_TABLE'],
@@ -173,7 +176,10 @@ def _get_page(base_args: Dict[str, Any], index_keys: List[str], page_token: Opti
 
 
 def list_posts(pageToken: Optional[str] = None, limit: int = 2) -> PostList:
-    page = PageToken.decode(pageToken) if pageToken else None
+    try:
+        page = PageToken.decode(pageToken) if pageToken else None
+    except:
+        raise InvalidPageTokenError
 
     items, nextToken, prevToken = get_page_for_entity('Post', page, limit=limit)
 
@@ -232,7 +238,10 @@ def delete_comment(post_slug: str, author: str, date: datetime) -> None:
     )
 
 def list_comments_for_post(post_slug: str, pageToken: Optional[str]=None, limit: int=20) -> CommentList:
-    page = PageToken.decode(pageToken) if pageToken else None
+    try:
+        page = PageToken.decode(pageToken) if pageToken else None
+    except:
+        raise InvalidPageTokenError
     
     base_args = {
         'TableName': os.environ['BLOG_TABLE'],
@@ -253,7 +262,10 @@ def list_comments_for_post(post_slug: str, pageToken: Optional[str]=None, limit:
     )
 
 def list_comments(pageToken: Optional[str]=None, limit: int=20) -> CommentList:
-    page = PageToken.decode(pageToken) if pageToken else None
+    try:
+        page = PageToken.decode(pageToken) if pageToken else None
+    except:
+        raise InvalidPageTokenError
 
     items, nextToken, prevToken = get_page_for_entity('Comment', page, limit=limit)
 
@@ -323,7 +335,10 @@ def delete_user(email: str):
     )
 
 def list_users(pageToken: Optional[str]=None, limit: int=20) -> UserList:
-    page = PageToken.decode(pageToken) if pageToken else None
+    try:
+        page = PageToken.decode(pageToken) if pageToken else None
+    except:
+        raise InvalidPageTokenError
 
     items, nextToken, prevToken = get_page_for_entity('User', page, limit=limit)
 
@@ -335,7 +350,10 @@ def list_users(pageToken: Optional[str]=None, limit: int=20) -> UserList:
     )
 
 def list_posts_for_author(email: str, pageToken: Optional[str]=None, limit: int=20) -> PostList:
-    page = PageToken.decode(pageToken) if pageToken else None
+    try:
+        page = PageToken.decode(pageToken) if pageToken else None
+    except:
+        raise InvalidPageTokenError
 
     items, nextToken, prevToken = get_page_for_author_entity(email, 'Post', page, limit=limit)
 
@@ -347,7 +365,10 @@ def list_posts_for_author(email: str, pageToken: Optional[str]=None, limit: int=
     )
 
 def list_comments_for_author(email: str, pageToken: Optional[str]=None, limit: int=20) -> CommentList:
-    page = PageToken.decode(pageToken) if pageToken else None
+    try:
+        page = PageToken.decode(pageToken) if pageToken else None
+    except:
+        raise InvalidPageTokenError
 
     items, nextToken, prevToken = get_page_for_author_entity(email, 'Comment', page, limit=limit)
 
