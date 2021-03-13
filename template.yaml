@@ -29,9 +29,67 @@ Resources:
           BASE_PATH: blog
           BLOG_TABLE: Blog
           BLOG_TABLE_ENTITY_INDEX: EntityType-CreatedAt-index
+          BLOG_TABLE_AUTHOR_INDEX: AuthorEmail_EntityType-CreatedAt-Index
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: Blog
+            TableName: !Ref BlogTable
+  BlogTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: BlogV2
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: EntityType
+          AttributeType: S
+        - AttributeName: CreatedAt
+          AttributeType: S
+        - AttributeName: AuthorEmail_EntityType
+          AttributeType: S
+      KeySchema: #required
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: EntityType-CreatedAt-Index
+          KeySchema:
+            - AttributeName: EntityType
+              KeyType: HASH
+            - AttributeName: CreatedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes:
+              - PK
+              - SK
+              - Slug
+              - Title
+              - Comment
+              - UpdatedAt
+              - AuthorEmail
+              - FirstName
+              - LastName
+              - Role
+        - IndexName: AuthorEmail_EntityType-CreatedAt-Index
+          KeySchema:
+            - AttributeName: AuthorEmail_EntityType
+              KeyType: HASH
+            - AttributeName: CreatedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes:
+              - PK
+              - SK
+              - Slug
+              - Title
+              - Comment
+              - UpdatedAt
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
