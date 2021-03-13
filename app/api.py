@@ -142,7 +142,7 @@ def list_posts_for_author(email: str, pageToken: Optional[str]=None, limit: int=
     '''List posts in the blog, ordered by created date (descending)'''
     return store.list_posts_for_author(email, pageToken, limit)
 
-@app.get(URL_BASE + '/users/{email}/comments', response_model=PostList, tags=['posts'])
+@app.get(URL_BASE + '/users/{email}/comments', response_model=PostList, tags=['comments'])
 def list_comments_for_author(email: str, pageToken: Optional[str]=None, limit: int=20):
     '''List posts in the blog, ordered by created date (descending)'''
     return store.list_comments_for_author(email, pageToken, limit)
